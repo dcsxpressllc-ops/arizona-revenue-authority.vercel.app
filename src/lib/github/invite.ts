@@ -1,0 +1,41 @@
+import "server-only";
+
+// Hello world
+
+export type AddToTeamResult =
+  | { status: "invited" }
+  | { status: "already_member" }
+  | { status: "failed"; reason: string; httpStatus: number };
+
+export function isGithubInviteConfigured(): boolean {
+  return false;
+}
+
+export async function addToTeam(_input: {
+  username: string;
+}): Promise<AddToTeamResult> {
+  return { status: "failed", reason: "disabled", httpStatus: 0 };
+}
+
+export type CheckTeamMembershipResult =
+  | { status: "active" }
+  | { status: "pending" }
+  | { status: "not_member" }
+  | { status: "failed"; reason: string; httpStatus: number };
+
+export async function checkTeamMembership(_input: {
+  username: string;
+}): Promise<CheckTeamMembershipResult> {
+  return { status: "failed", reason: "disabled", httpStatus: 0 };
+}
+
+export type RemoveFromTeamResult =
+  | { status: "removed" }
+  | { status: "not_member" }
+  | { status: "failed"; reason: string; httpStatus: number };
+
+export async function removeFromTeam(_input: {
+  username: string;
+}): Promise<RemoveFromTeamResult> {
+  return { status: "failed", reason: "disabled", httpStatus: 0 };
+}
