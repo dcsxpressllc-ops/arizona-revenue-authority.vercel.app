@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --version)",
+      "Bash(node --version)",
+      "Bash(pnpm --version)",
+      "Bash(gh --version)",
+      "Bash(firebase --version)",
+      "Bash(vercel --version)",
+      "Bash(stripe --version)",
+      "Bash(gcloud --version)",
+      "Bash(cloudflared --version)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm doctor)",
+      "Bash(gh auth status)",
+      "Bash(firebase projects:list)",
+      "Bash(vercel whoami)"
+    ]
+  }
+}

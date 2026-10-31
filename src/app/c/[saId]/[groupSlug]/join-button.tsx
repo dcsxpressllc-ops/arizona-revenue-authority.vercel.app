@@ -1,0 +1,128 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { PurchaseButton } from "@/components/community/purchase-button";
+
+type MemberState = "guest" | "member" | "joined" | "pending";
+
+/**
+ * About-page CTA. Guest: link to member login. Signed in, not joined: POST
+ * join. Joined: enter the group (feed, or classroom in courses mode).
+ * Pending: awaiting approval. Labels and destination come from the server
+ * so the same button works for a community or a course.
+ */
+export function JoinButton({
+  saId,
+  groupId,
+  state,
+  access,
+  joinLabel,
+  enterHref,
+  enterLabel,
+  brandColor,
+}: {
+  saId: string;
+  groupId: string;
+  state: MemberState;
+  access: "free" | "paid";
+  joinLabel: string;
+  enterHref: string;
+  enterLabel: string;
+  brandColor: string;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const style = { backgroundColor: brandColor, color: "#fff" } as const;
+  const base =
+    "inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-60";
+
+  if (state === "joined") {
+    return (
+      <a href={enterHref} className={base} style={style}>
+        {enterLabel}
+      </a>
+    );
+  }
+
+  if (state === "pending") {
+    return (
+      <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-center text-sm text-amber-700">
+        Your request to join is awaiting approval.
+      </div>
+    );
+  }
+
+  if (state === "guest") {
+    return (
+      <a
+        href={`/c/${saId}/login?join=${encodeURIComponent(groupId)}`}
+        className={base}
+        style={style}
+      >
+        {joinLabel}
+      </a>
+    );
+  }
+
+  // Signed in, not joined yet. Paid groups go through the one-time purchase.
+  if (access === "paid") {
+    return (
+      <PurchaseButton
+        saId={saId}
+        groupId={groupId}
+        scope="group"
+        targetId={groupId}
+        label={joinLabel}
+        brand={brandColor}
+        className={base}
+      />
+    );
+  }
+
+  async function handleJoin() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/community/${saId}/${groupId}/join`, {
+        method: "POST",
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        status?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Couldn't join");
+      if (data.status === "active") {
+        router.push(enterHref);
+        router.refresh();
+      } else if (data.status === "payment_required") {
+        setError("This group requires payment — coming soon.");
+      } else {
+        router.refresh();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't join");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <button onClick={handleJoin} disabled={busy} className={base} style={style}>
+        {busy ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" /> Joining…
+          </>
+        ) : (
+          joinLabel
+        )}
+      </button>
+      {error && <p className="text-center text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}

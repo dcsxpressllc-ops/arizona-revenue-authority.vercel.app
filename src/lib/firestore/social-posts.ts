@@ -1,0 +1,35 @@
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  type Unsubscribe,
+} from "firebase/firestore";
+import { getFirebaseDb } from "@/lib/firebase/client";
+import type { SocialPostDoc } from "@/types/social";
+
+/**
+ * Client subscription for the Social Planner calendar/list. Writes go through
+ * /api/sub-accounts/[id]/social/* (socialPosts is read-only for members).
+ * Single equality filter; sorting and date bucketing are client-side.
+ */
+export function subscribeToSocialPosts(
+  subAccountId: string,
+  callback: (posts: SocialPostDoc[]) => void,
+  onError?: (err: Error) => void,
+): Unsubscribe {
+  const q = query(
+    collection(getFirebaseDb(), "socialPosts"),
+    where("subAccountId", "==", subAccountId),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list = snap.docs.map(
+        (d) => ({ id: d.id, ...(d.data() as Omit<SocialPostDoc, "id">) }),
+      );
+      callback(list);
+    },
+    (err) => onError?.(err),
+  );
+}
